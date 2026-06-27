@@ -320,7 +320,7 @@ async def run_benchmark(url: str, concurrency: int = 10):
     assertion_engine = AssertionEngine()
     
     limits = httpx.Limits(max_keepalive_connections=concurrency, max_connections=concurrency)
-    async with httpx.AsyncClient(limits=limits) as client:
+    async with httpx.AsyncClient(limits=limits, verify=False) as client:
         # We process requests concurrently in chunks based on concurrency limit
         sem = asyncio.Semaphore(concurrency)
         
@@ -404,5 +404,5 @@ async def run_benchmark(url: str, concurrency: int = 10):
 
 
 if __name__ == "__main__":
-    url_target = "http://127.0.0.1:8000/api/v1/clinical-sanitize"
+    url_target = "https://clinical-sanitizer-api-731921218341.europe-west1.run.app/api/v1/clinical-sanitize"
     asyncio.run(run_benchmark(url_target, concurrency=10))
