@@ -33,12 +33,9 @@ jobs:
         run: python export_openapi.py
 
       # Step 5: Sync API definition to RapidAPI Platform Hub
-      # Uses the RapidAPI Platform API to upload/update the listing definition
+      # Runs the Python sync script using secrets as environment variables
       - name: Upload OpenAPI definition to RapidAPI
-        run: |
-          curl --fail --request PUT \
-            --url "https://platformv.p.rapidapi.com/v1/apis/${{ secrets.RAPIDAPI_ACCOUNT_ID }}/versions/current" \
-            --header "x-rapidapi-key: ${{ secrets.RAPIDAPI_ACCESS_KEY }}" \
-            --header "x-rapidapi-host: platformv.p.rapidapi.com" \
-            -F "file=@openapi.json" \
-            -F "fileFormat=oas"
+        env:
+          RAPIDAPI_ACCOUNT_ID: ${{ secrets.RAPIDAPI_ACCOUNT_ID }}
+          RAPIDAPI_ACCESS_KEY: ${{ secrets.RAPIDAPI_ACCESS_KEY }}
+        run: python sync_rapidapi.py
