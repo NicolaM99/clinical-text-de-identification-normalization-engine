@@ -1,4 +1,4 @@
 # project.toml configures environment variables for Google Cloud Buildpacks
 [[build.env]]
 name = "GOOGLE_PYTHON_VERSION"
-value = "3.11.x"
+value = "3.13.x"
