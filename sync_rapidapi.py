@@ -1,36 +1,61 @@
 import os
 import sys
+import time
 import httpx
 
-def test_sync():
+def sync_definition():
     api_id = os.environ.get("RAPIDAPI_ACCOUNT_ID")
     api_key = os.environ.get("RAPIDAPI_ACCESS_KEY")
-    version_id = "apiversion_e1a4947d-bd49-497a-9c68-a199f7adb83f"
+    version_id = os.environ.get("RAPIDAPI_VERSION_ID")
     
-    scenarios = [
-        ("https://platformv.p.rapidapi.com/v1/apis/{api_id}/versions", "platformv.p.rapidapi.com"),
-        ("https://platformv.p.rapidapi.com/v1/apis/{api_id}/versions/{version_id}", "platformv.p.rapidapi.com"),
-        ("https://platform.rapidapi.com/v1/apis/{api_id}/versions", "platform.rapidapi.com"),
-        ("https://platform.rapidapi.com/v1/apis/{api_id}/versions/{version_id}", "platform.rapidapi.com"),
-        ("https://platform-api.rapidapi.com/v1/apis/{api_id}/versions", "platform-api.rapidapi.com"),
-        ("https://platform-api.rapidapi.com/v1/apis/{api_id}/versions/{version_id}", "platform-api.rapidapi.com"),
-        ("https://platformv.p.rapidapi.com/v1/apis/{api_id}/versions", "platformapi1.rapidapi-x.rapidapi.com"),
-        ("https://rest-platform-api.p.rapidapi.com/v1/apis/{api_id}/versions", "rest-platform-api.p.rapidapi.com"),
-    ]
+    if not api_id or not api_key or not version_id:
+        print("Error: RAPIDAPI_ACCOUNT_ID, RAPIDAPI_ACCESS_KEY, or RAPIDAPI_VERSION_ID environment variables not set.")
+        sys.exit(1)
+        
+    headers = {
+        "x-rapidapi-key": api_key,
+        "x-rapidapi-host": "platformv.p.rapidapi.com"
+    }
     
-    print(f"API ID being tested: {api_id}")
+    upload_url = f"https://platformv.p.rapidapi.com/v1/apis/{api_id}/versions/{version_id}"
+    print(f"Uploading OpenAPI specification directly to: {upload_url}")
     
-    for url_template, host in scenarios:
-        url = url_template.format(api_id=api_id, version_id=version_id)
-        headers = {
-            "x-rapidapi-key": api_key,
-            "x-rapidapi-host": host
-        }
+    # Define retry parameters for handling HTTP 429 rate limiting
+    max_retries = 5
+    backoff_time = 2.0  # seconds
+    
+    for attempt in range(1, max_retries + 1):
         try:
-            r = httpx.get(url, headers=headers, timeout=10.0)
-            print(f"URL: {url} | Host: {host} -> HTTP {r.status_code}: {r.text[:150]}")
+            # Re-open file on each retry
+            files = {
+                "file": ("openapi.json", open("openapi.json", "rb"), "application/json")
+            }
+            data = {
+                "fileFormat": "oas"
+            }
+            
+            with httpx.Client(headers=headers, timeout=20.0) as client:
+                r_upload = client.put(upload_url, files=files, data=data)
+                
+                if r_upload.status_code in [200, 201, 204]:
+                    print("Successfully synchronized OpenAPI definition with RapidAPI!")
+                    sys.exit(0)
+                elif r_upload.status_code == 429:
+                    print(f"[Attempt {attempt}/{max_retries}] Received HTTP 429 (Too many requests). Backing off for {backoff_time}s...")
+                    time.sleep(backoff_time)
+                    backoff_time *= 2.0  # Exponential increase
+                else:
+                    print(f"Failed to upload definition (HTTP {r_upload.status_code}): {r_upload.text}")
+                    sys.exit(1)
         except Exception as e:
-            print(f"URL: {url} | Host: {host} failed: {e}")
+            print(f"An unexpected error occurred on attempt {attempt}: {str(e)}")
+            if attempt == max_retries:
+                sys.exit(1)
+            time.sleep(backoff_time)
+            backoff_time *= 2.0
+
+    print("Failed to sync definition after maximum retries due to rate limiting.")
+    sys.exit(1)
 
 if __name__ == "__main__":
-    test_sync()
+    sync_definition()

@@ -38,4 +38,5 @@ jobs:
         env:
           RAPIDAPI_ACCOUNT_ID: ${{ secrets.RAPIDAPI_ACCOUNT_ID }}
           RAPIDAPI_ACCESS_KEY: ${{ secrets.RAPIDAPI_ACCESS_KEY }}
+          RAPIDAPI_VERSION_ID: ${{ secrets.RAPIDAPI_VERSION_ID }}
         run: python sync_rapidapi.py
