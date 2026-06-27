@@ -119,3 +119,7 @@ AWS Lambda executes ASGI applications using the Mangum handler exposed as `handl
    - **Ultra**: $79/month for 50,000 requests.
    - **Mega**: $199/month for 200,000 requests.
 6. **Publish**: Save changes and set the API status to **Public**.
+
+---
+
+*Note: OpenAPI documentation is automatically synced with RapidAPI on every push to the main branch.*
