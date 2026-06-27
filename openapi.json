@@ -1,0 +1,235 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Clinical Text De-Identification & Normalization Engine",
+    "description": "Production-ready serverless API for clinical note processing.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint for container probes and API status validation.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clinical-sanitize": {
+      "post": {
+        "summary": "Sanitize Clinical Text",
+        "description": "Asynchronously ingest raw clinical notes, de-identify, normalize, and chunk\nthe content for downstream vector indexing and RAG pipeline integration.",
+        "operationId": "sanitize_clinical_text_api_v1_clinical_sanitize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClinicalSanitizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicalSanitizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChunkItem": {
+        "properties": {
+          "chunk_id": {
+            "type": "integer",
+            "title": "Chunk Id",
+            "description": "Sequential index of the chunk."
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Sanitized and normalized text snippet of the chunk."
+          }
+        },
+        "type": "object",
+        "required": [
+          "chunk_id",
+          "text"
+        ],
+        "title": "ChunkItem"
+      },
+      "ClinicalSanitizeRequest": {
+        "properties": {
+          "clinical_note": {
+            "type": "string",
+            "title": "Clinical Note",
+            "description": "Raw, unstructured clinical note to be de-identified and normalized.",
+            "examples": [
+              "Patient: John Doe, 45yo male, presented to Boston Medical Center on 10/12/2021. SSN: 000-12-3456. Complaining of SOB."
+            ]
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5000.0,
+                "minimum": 50.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens",
+            "description": "Maximum character length for each structural chunk.",
+            "default": 500
+          }
+        },
+        "type": "object",
+        "required": [
+          "clinical_note"
+        ],
+        "title": "ClinicalSanitizeRequest"
+      },
+      "ClinicalSanitizeResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Status of the operation.",
+            "default": "success"
+          },
+          "metadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MetadataInfo"
+              }
+            ],
+            "description": "Execution metadata."
+          },
+          "sanitized_text": {
+            "type": "string",
+            "title": "Sanitized Text",
+            "description": "Entire sanitized and normalized text."
+          },
+          "normalized_terms_found": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Normalized Terms Found",
+            "description": "Unique medical abbreviations normalized during processing."
+          },
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/ChunkItem"
+            },
+            "type": "array",
+            "title": "Chunks",
+            "description": "List of semantic text chunks for downstream RAG pipeline ingestion."
+          }
+        },
+        "type": "object",
+        "required": [
+          "metadata",
+          "sanitized_text",
+          "normalized_terms_found",
+          "chunks"
+        ],
+        "title": "ClinicalSanitizeResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MetadataInfo": {
+        "properties": {
+          "processed_chars": {
+            "type": "integer",
+            "title": "Processed Chars",
+            "description": "Total characters processed from the input note."
+          },
+          "chunks_count": {
+            "type": "integer",
+            "title": "Chunks Count",
+            "description": "Total number of chunks generated."
+          }
+        },
+        "type": "object",
+        "required": [
+          "processed_chars",
+          "chunks_count"
+        ],
+        "title": "MetadataInfo"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

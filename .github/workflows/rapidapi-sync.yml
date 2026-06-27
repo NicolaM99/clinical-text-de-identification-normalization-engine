@@ -1,0 +1,44 @@
+name: Sync OpenAPI definition to RapidAPI Hub
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  rapidapi-sync:
+    name: Build OpenAPI and Sync
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # Step 3: Install project dependencies
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4: Run the OpenAPI extraction script
+      - name: Export OpenAPI Specification
+        run: python export_openapi.py
+
+      # Step 5: Sync API definition to RapidAPI Platform Hub
+      # Uses the RapidAPI Platform API to upload/update the listing definition
+      - name: Upload OpenAPI definition to RapidAPI
+        run: |
+          curl --fail --request PUT \
+            --url "https://platformv.p.rapidapi.com/v1/apis/${{ secrets.RAPIDAPI_ACCOUNT_ID }}/versions/current" \
+            --header "x-rapidapi-key: ${{ secrets.RAPIDAPI_ACCESS_KEY }}" \
+            --header "x-rapidapi-host: platformv.p.rapidapi.com" \
+            -F "file=@openapi.json" \
+            -F "fileFormat=oas"
