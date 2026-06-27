@@ -92,7 +92,7 @@ class ClinicalSanitizer:
         
         # 2. Pre-compiled De-identification Regexes for maximum performance (<10ms processing)
         # SSN & Codice Fiscale
-        self.ssn_re = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+        self.ssn_re = re.compile(r"\b\d{3}-\d{2,3}-\d{4}\b")
         self.cf_re = re.compile(r"\b[A-Z]{6}\d{2}[A-EHLMPR-T][0-9LMNPQRSTV]{2}[A-Z][0-9LMNPQRSTV]{3}[A-Z]\b", re.IGNORECASE)
         
         # Dates (MM/DD/YYYY, YYYY-MM-DD, Month DD YYYY, DD Month YYYY)
@@ -109,9 +109,9 @@ class ClinicalSanitizer:
             re.IGNORECASE
         )
         
-        # IDs (MRN, Patient ID, Patient Record No, etc.)
+        # IDs (MRN, SSN, ID, Patient ID, Record No, etc.)
         self.ids_re = re.compile(
-            r"\b(?:MRN|ID|Patient ID|Record No|No\.|Codice Paziente)\s*[:#-]?\s*\d+\b",
+            r"\b(?:MRN|SSN|ID|Patient ID|Record No|No\.|Codice Paziente)\s*[:#-]?\s*[\d-]+\b",
             re.IGNORECASE
         )
         
