@@ -83,6 +83,8 @@ class ClinicalSanitizer:
             r"\bcopd\b": ("Chronic Obstructive Pulmonary Disease", "COPD"),
             r"\bgerd\b": ("Gastroesophageal Reflux Disease", "GERD"),
             r"\buti\b": ("Urinary Tract Infection", "UTI"),
+            r"\bchf\b": ("Congestive Heart Failure", "CHF"),
+            r"\bq\.?h\.?s\.?\b": ("at bedtime", "qhs"),
         }
         
         self.compiled_abbrevs = [
@@ -117,7 +119,8 @@ class ClinicalSanitizer:
         
         # Patient & Doctor names with standard medical titles / prefix labels
         self.names_re = re.compile(
-            r"\b(?:Dr\.|Doctor|Mr\.|Mrs\.|Ms\.|Patient|Dr)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b"
+            r"\b(?:Dr\.|Doctor|Mr\.|Mrs\.|Ms\.|Patient|Dr|Physician|Dr\.ssa|Paziente|Medico)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b",
+            re.IGNORECASE
         )
         
         # Hospitals, clinics, and medical centers
@@ -137,9 +140,9 @@ class ClinicalSanitizer:
         # Step 2: Mask Patient IDs / MRN
         text = self.ids_re.sub("[REDACTED_ID]", text)
         
-        # Step 3: Mask Names with prefix syntax (e.g. Patient: John Doe, Doctor: Alice Smith)
+        # Step 3: Mask Names with prefix syntax (e.g. Patient: John Doe, Doctor: Alice Smith, Physician John Doe)
         text = re.sub(
-            r"\b(Patient|Doctor|Physician|Dr\.|Mr\.|Mrs\.|Ms\.|Name|Paziente|Medico)\s*:\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?",
+            r"\b(Patient|Doctor|Physician|Dr\.|Mr\.|Mrs\.|Ms\.|Name|Paziente|Medico|Dr\.ssa)\s*:?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)",
             lambda m: f"{m.group(1)}: [REDACTED_NAME]" if ":" in m.group(0) else f"{m.group(1)} [REDACTED_NAME]",
             text,
             flags=re.IGNORECASE
