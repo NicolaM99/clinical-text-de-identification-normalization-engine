@@ -152,10 +152,9 @@ class ClinicalSanitizer:
         
         # Step 3: Mask Names with prefix syntax (e.g. Patient: John Doe, Doctor: Alice Smith, Physician John Doe)
         text = re.sub(
-            r"\b(Patient|Doctor|Physician|Dr\.|Mr\.|Mrs\.|Ms\.|Name|Paziente|Medico|Dr\.ssa)\s*:?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)",
+            r"\b(Patient|patient|Doctor|doctor|Physician|physician|Dr\.|dr\.|Mr\.|mr\.|Mrs\.|mrs\.|Ms\.|ms\.|Name|name|Paziente|paziente|Medico|medico|Dr\.ssa|dr\.ssa)\s*:?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)",
             lambda m: f"{m.group(1)}: [REDACTED_NAME]" if ":" in m.group(0) else f"{m.group(1)} [REDACTED_NAME]",
-            text,
-            flags=re.IGNORECASE
+            text
         )
         
         # Step 4: Mask standard Doctor/Patient names with titles
