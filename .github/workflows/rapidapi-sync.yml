@@ -8,7 +8,7 @@ jobs:
     name: Build OpenAPI and Sync
     runs-on: ubuntu-latest
     env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
     steps:
       # Step 1: Checkout the code
