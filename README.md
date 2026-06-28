@@ -208,4 +208,4 @@ FastAPI applications run seamlessly on AWS Lambda using the pre-configured Mangu
 
 ## ⚖️ License
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information. 
