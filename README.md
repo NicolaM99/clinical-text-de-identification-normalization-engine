@@ -1,34 +1,103 @@
-# Clinical Text De-Identification & Normalization Engine
+# Clinical Text De-Identification & Normalization Engine 🩺🔒
 
-A high-performance, production-ready, serverless-optimized API designed for the sanitization, abbreviation expansion, and boundary-aware chunking of raw, unstructured clinical notes. This engine is designed to prevent data leakage of Protected Health Information (PHI) and normalize shorthand clinical jargon, making it an ideal pre-processing step for downstream RAG (Retrieval-Augmented Generation) pipelines, LLMs, or medical vector databases.
+[![License: MIT](https://img.shields.io/github/license/NicolaM99/clinical-text-de-identification-normalization-engine?style=flat-square&color=blue)](LICENSE)
+[![CI/CD Sync](https://img.shields.io/github/actions/workflow/status/NicolaM99/clinical-text-de-identification-normalization-engine/rapidapi-sync.yml?branch=main&label=RapidAPI%20Sync&style=flat-square)](https://github.com/NicolaM99/clinical-text-de-identification-normalization-engine/actions)
+[![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.13-brightgreen?style=flat-square)](#)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Cloud Run](https://img.shields.io/badge/GCP%20Cloud%20Run-Deployed-blue?style=flat-square&logo=google-cloud&logoColor=white)](#)
 
----
-
-## Technical Architecture & Optimization
-
-- **Zero-Cold-Start Philosophy**: Replaces heavy SpaCy, HuggingFace, or transformer models with pre-compiled, optimized regular expressions and in-memory key-value lookups.
-- **Fast Execution**: Average response time under **10ms** (excluding network transit).
-- **Extremely Low Memory Footprint**: Runs comfortably below **50MB RAM** (limit is 256MB on serverless runtimes).
-- **Cloud-Native Integration**: Equipped with an ASGI adapter (`Mangum`) out-of-the-box for seamless deployments on AWS Lambda, Google Cloud Functions, or any ASGI/WSGI gateway.
+An ultra-fast, serverless-optimized, and production-ready Clinical NLP engine. It is designed specifically for sanitizing, expanding abbreviations, and chunking raw, unstructured clinical notes. This engine acts as a secure pre-processing gateway for downstream Retrieval-Augmented Generation (RAG) pipelines, LLMs, or medical vector databases, preventing the leakage of Protected Health Information (PHI) to third-party AI models.
 
 ---
 
-## API Documentation
+## 🚀 Key Features
+
+- **Zero-Cold-Start Architecture**: Replaces heavy neural models (SpaCy, HuggingFace, transformers) with highly optimized, pre-compiled regular expressions and in-memory key-value lookups.
+- **Ultra-Low Latency**: Processes notes and redacts data with an average execution time under **10ms** (excluding network transit).
+- **HIPAA & MIMIC-III Compliance**: Redacts names, dates, SSNs, Italian Tax IDs (Codice Fiscale), hospital names, and contact details into standard tokens (e.g., `[REDACTED_NAME]`, `[REDACTED_DATE]`).
+- **Medical Abbreviation Expansion**: Automatically normalizes standard shorthand clinical jargon in-memory (e.g., `HTN` -> `hypertension`, `BID` -> `twice a day`).
+- **Boundary-Aware Chunking**: Structurally chunks text respecting paragraph and sentence boundaries below user-defined limits (e.g., `max_tokens=500`).
+- **Cloud Native**: Out-of-the-box support for AWS Lambda (via `Mangum`) and Google Cloud Run.
+
+---
+
+## 📋 Table of Contents
+
+- [Clinical Abbreviation Reference](#-clinical-abbreviation-reference)
+- [Local Development & Setup](#-local-development--setup)
+- [API Documentation](#-api-documentation)
+- [Client Integration Examples](#-client-integration-examples)
+- [Serverless Deployment Guide](#-serverless-deployment-guide)
+- [License](#-license)
+
+---
+
+## 🩺 Clinical Abbreviation Reference
+
+The engine normalizes 28+ clinical shorthands dynamically during text processing:
+
+| Abbreviation | Expanded Definition | Category |
+|---|---|---|
+| `HTN` | hypertension | Condition |
+| `DM` | diabetes mellitus | Condition |
+| `CAD` | coronary artery disease | Condition |
+| `CHF` | congestive heart failure | Condition |
+| `CKD` | chronic kidney disease | Condition |
+| `COPD` | chronic obstructive pulmonary disease | Condition |
+| `BID` | twice a day | Dosage Frequency |
+| `QD` | once a day | Dosage Frequency |
+| `QHS` | at bedtime | Dosage Frequency |
+| `PRN` | as needed | Dosage Frequency |
+| `SOB` | shortness of breath | Symptom |
+| `Dx` / `Tx` / `Rx` / `Hx` | diagnosis / treatment / prescription / history | Clinical Process |
+
+---
+
+## 💻 Local Development & Setup
+
+### Prerequisites
+- Python 3.11 or 3.13
+- Pip (Python Package Manager)
+
+### 1. Installation
+Clone the repository and install the dependencies:
+```bash
+git clone https://github.com/NicolaM99/clinical-text-de-identification-normalization-engine.git
+cd clinical-text-de-identification-normalization-engine
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Run Local Development Server
+Spin up the FastAPI server using Uvicorn:
+```bash
+uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+Access the interactive OpenAPI swagger documentation at `http://127.0.0.1:8000/docs`.
+
+### 3. Run Benchmarks & Stress Tests
+Execute the concurrent asynchronous stress-testing suite:
+```bash
+python stress_test.py
+```
+This script generates 50 synthetic medical notes, fires them concurrently via `httpx`, executes assertions on correctness, and outputs performance statistics.
+
+---
+
+## 📡 API Documentation
 
 ### POST `/api/v1/clinical-sanitize`
+Sanitizes a clinical note by removing PII/PHI, expanding abbreviations, and chunking the resulting text.
 
-Processes a raw clinical note to de-identify PII/PHI, normalize standard abbreviations, and chunk the text.
+#### Request Headers
+- `Content-Type: application/json`
 
-#### Request Schema
+#### Request Body
+- `clinical_note` (string, Required): The raw clinical text.
+- `max_tokens` (integer, Optional, Default: `500`): Maximum character length per chunk. Range: `50` to `5000`.
 
-- **Headers**: `Content-Type: application/json`
-- **Body**:
-
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `clinical_note` | `string` | **Yes** | — | Raw, unstructured clinical text. |
-| `max_tokens` | `integer` | No | `500` | Maximum character length of each structural text chunk. Range: `50` to `5000`. |
-
+*Request JSON Example:*
 ```json
 {
   "clinical_note": "Patient: John Doe, 45yo male, presented to Boston Medical Center on 10/12/2021. SSN: 000-12-3456. Complaining of SOB.",
@@ -36,10 +105,14 @@ Processes a raw clinical note to de-identify PII/PHI, normalize standard abbrevi
 }
 ```
 
-#### Response Schema
+#### Response Body
+- `status` (string): Operation outcome (`success`).
+- `metadata` (object): Statistics detailing characters processed and chunks created.
+- `sanitized_text` (string): The completely sanitized and expanded medical text.
+- `normalized_terms_found` (array of strings): Abbreviation acronyms detected and expanded.
+- `chunks` (array of objects): Boundary-aware text splits for embedding/RAG.
 
-Returns a JSON object detailing status, processing metadata, the full sanitized/normalized text, a list of normalized abbreviations found, and boundary-aware chunks.
-
+*Response JSON Example:*
 ```json
 {
   "status": "success",
@@ -62,66 +135,77 @@ Returns a JSON object detailing status, processing metadata, the full sanitized/
 
 ---
 
-## Serverless Deployment Guide
+## 🛠️ Client Integration Examples
 
-### 1. Google Cloud Functions (Python Runtime)
+### cURL
+```bash
+curl --request POST \
+  --url https://clinical-sanitizer-api-731921218341.europe-west1.run.app/api/v1/clinical-sanitize \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "clinical_note": "Patient John Doe, presenting with HTN and DM.",
+    "max_tokens": 500
+  }'
+```
 
-Google Cloud Functions supports FastAPI natively via standard WSGI/ASGI servers (functions-framework).
+### Python (httpx)
+```python
+import httpx
 
-1. Zip your project files:
-   ```bash
-   zip -r function.zip main.py requirements.txt
-   ```
-2. Deploy using the `gcloud` CLI:
-   ```bash
-   gcloud functions deploy clinical-sanitize-engine \
-     --runtime python310 \
-     --trigger-http \
-     --allow-unauthenticated \
-     --entry-point app \
-     --memory 256MB
-   ```
-   *Note: Set `--entry-point app` since FastAPI's `app` is exposed directly in `main.py`.*
+url = "https://clinical-sanitizer-api-731921218341.europe-west1.run.app/api/v1/clinical-sanitize"
+payload = {
+    "clinical_note": "Patient John Doe, presenting with HTN and DM.",
+    "max_tokens": 500
+}
 
-### 2. AWS Lambda (via API Gateway or Function URLs)
+with httpx.Client() as client:
+    response = client.post(url, json=payload)
+    print(response.json())
+```
 
-AWS Lambda executes ASGI applications using the Mangum handler exposed as `handler` in `main.py`.
+### JavaScript (Axios)
+```javascript
+const axios = require('axios');
 
-1. Package the application and dependencies:
+const options = {
+  method: 'POST',
+  url: 'https://clinical-sanitizer-api-731921218341.europe-west1.run.app/api/v1/clinical-sanitize',
+  headers: {'Content-Type': 'application/json'},
+  data: {
+    clinical_note: 'Patient John Doe, presenting with HTN and DM.',
+    max_tokens: 500
+  }
+};
+
+axios.request(options).then((response) => {
+  console.log(response.data);
+}).catch((error) => {
+  console.error(error);
+});
+```
+
+---
+
+## ☁️ Serverless Deployment Guide
+
+### 1. Google Cloud Run (via Cloud Buildpacks)
+Our repository is fully optimized for GCP Cloud Buildpacks deployment using Python 3.13. Build settings are managed dynamically via `project.toml`.
+
+To deploy, simply link your repository to Google Cloud Run and configure build triggers on pushes to the `main` branch.
+
+### 2. AWS Lambda
+FastAPI applications run seamlessly on AWS Lambda using the pre-configured Mangum ASGI adapter:
+1. Package dependencies:
    ```bash
    pip install -r requirements.txt -t lib
    cd lib && zip -r ../deployment_package.zip . && cd ..
    zip -g deployment_package.zip main.py
    ```
-2. Deploy the `deployment_package.zip` to AWS Lambda.
-3. Configure the Lambda handler to: `main.handler`.
-4. Add an **API Gateway (HTTP API)** trigger or enable **Function URLs** to route traffic.
+2. Upload the `deployment_package.zip` to your AWS Lambda function.
+3. Set the Lambda Handler entrypoint to: `main.handler`.
 
 ---
 
-## Monetization on RapidAPI
+## ⚖️ License
 
-### Step-by-Step RapidAPI Setup
-
-1. **Create a Developer Account**: Sign up at [RapidAPI Provider Portal](https://rapidapi.com/studio).
-2. **Add New API**:
-   - **API Name**: `Clinical Text De-Identification & Normalization Engine`
-   - **Short Description**: `PII/PHI de-identification and clinical abbreviation expansion tool, optimized for serverless RAG ingestion pipelines.`
-   - **Category**: `Medical / Health`
-3. **Configure Gateway/Target URL**:
-   - Point the **Target URL** to your Google Cloud Function URL or AWS Lambda Function URL/API Gateway URL (e.g. `https://<your-lambda-id>.execute-api.us-east-1.amazonaws.com`).
-4. **Define REST Endpoints**:
-   - Add a POST endpoint `/api/v1/clinical-sanitize`.
-   - Add request body parameter schema using the JSON schema provided in the API documentation section.
-5. **Configure Subscription & Pricing Plans**:
-   - **Basic**: 100 free requests/month (with rate limiting).
-   - **Pro**: $19/month for 5,000 requests.
-   - **Ultra**: $79/month for 50,000 requests.
-   - **Mega**: $199/month for 200,000 requests.
-6. **Publish**: Save changes and set the API status to **Public**.
-
----
-
-*Note: OpenAPI documentation is automatically synced with RapidAPI on every push to the main branch.*
-
-
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.

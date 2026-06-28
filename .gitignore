@@ -5,3 +5,7 @@ __pycache__/
 .idea/
 .vscode/
 .system_generated/
+benchmark_results.json
+.pytest_cache/
+.DS_Store
+*.log
