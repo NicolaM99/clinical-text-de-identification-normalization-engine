@@ -37,12 +37,12 @@ class ClinicalSanitizeRequest(BaseModel):
     @field_validator('max_tokens', mode='before')
     @classmethod
     def coerce_empty_str(cls, v):
-        if v == "" or v is None:
+        if v == "" or v is None or v == {}:
             return 500
         try:
             return int(v)
         except (ValueError, TypeError):
-            return v
+            return 500
 
 
 class ChunkItem(BaseModel):
