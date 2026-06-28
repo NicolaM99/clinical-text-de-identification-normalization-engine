@@ -130,8 +130,7 @@ class ClinicalSanitizer:
         
         # Patient & Doctor names with standard medical titles / prefix labels
         self.names_re = re.compile(
-            r"\b(?:Dr\.|Doctor|Mr\.|Mrs\.|Ms\.|Patient|Dr|Physician|Dr\.ssa|Paziente|Medico)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b",
-            re.IGNORECASE
+            r"\b(?i:Dr\.|Doctor|Mr\.|Mrs\.|Ms\.|Patient|Dr|Physician|Dr\.ssa|Paziente|Medico)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b"
         )
         
         # Hospitals, clinics, and medical centers
