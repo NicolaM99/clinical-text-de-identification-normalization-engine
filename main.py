@@ -5,8 +5,9 @@ import json
 from typing import List, Optional, Tuple
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from mangum import Mangum
+
 
 # --- Structured Logging Setup ---
 logging.basicConfig(level=logging.INFO)
@@ -32,6 +33,16 @@ class ClinicalSanitizeRequest(BaseModel):
         ge=50, 
         le=5000
     )
+
+    @field_validator('max_tokens', mode='before')
+    @classmethod
+    def coerce_empty_str(cls, v):
+        if v == "" or v is None:
+            return 500
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            return v
 
 
 class ChunkItem(BaseModel):
