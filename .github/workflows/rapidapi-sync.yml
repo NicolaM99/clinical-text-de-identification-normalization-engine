@@ -1,9 +1,7 @@
 name: Sync OpenAPI definition to RapidAPI Hub
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   rapidapi-sync:
@@ -35,6 +33,7 @@ jobs:
       # Step 5: Sync API definition to RapidAPI Platform Hub
       # Runs the Python sync script using secrets as environment variables
       - name: Upload OpenAPI definition to RapidAPI
+        continue-on-error: true
         env:
           RAPIDAPI_ACCOUNT_ID: ${{ secrets.RAPIDAPI_ACCOUNT_ID }}
           RAPIDAPI_ACCESS_KEY: ${{ secrets.RAPIDAPI_ACCESS_KEY }}
